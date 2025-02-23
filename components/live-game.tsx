@@ -21,34 +21,63 @@ interface GameState {
 }
 
 export default function LiveGame() {
-  const [gameState, setGameState] = useState<GameState>({
-    homeTeam: {
-      name: "Lakers",
-      score: 0,
-      possession: false,
-    },
-    awayTeam: {
-      name: "Warriors",
-      score: 0,
-      possession: true,
-    },
-    quarter: 1,
-    timeRemaining: "12:00",
-    lastUpdate: "",
-  })
+  const [gameStates, setGameStates] = useState<GameState[]>([])
 
   useEffect(() => {
-    const eventSource = new EventSource("/api/game-updates")
+    const eventSource = new EventSource("/api/get-games")
 
     eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      setGameState(data)
+      try {
+        const data = JSON.parse(event.data)
+
+        if (data.game_states && Array.isArray(data.game_states)) {
+          // Update state with array of game objects
+          setGameStates(data.game_states)
+        }
+      } catch (error) {
+        console.error("Failed to parse game state:", error)
+      }
     }
 
     return () => {
       eventSource.close()
     }
   }, [])
+
+  return (
+    <div className="space-y-6">
+      {gameStates.length > 0 ? (
+        gameStates.map((game) => (
+          <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-2xl">Live Game</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div className="space-y-1">
+                  <p className="text-xl font-semibold">{game.homeTeam.name}</p>
+                  <p className="text-3xl font-bold">{game.homeTeam.score}</p>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-xl font-semibold">{game.awayTeam.name}</p>
+                  <p className="text-3xl font-bold">{game.awayTeam.score}</p>
+                </div>
+              </div>
+              <Progress value={33} className="h-2" />
+              <div className="text-sm text-muted-foreground">
+                Last update: {gameState.lastUpdate || "Waiting for updates..."}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        ))
+      ) : (
+        <p>No live games available.</p>
+      )}
+    </div>
+  )
+}
 
   return (
     <Card className="w-full">

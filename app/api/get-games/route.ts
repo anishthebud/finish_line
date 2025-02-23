@@ -5,22 +5,22 @@ export async function GET() {
 
   const readable = new ReadableStream({
     async start(controller) {
-      const fetchGameState = async () => {
+      const fetchGames = async () => {
         try {
-          const response = await fetch("http://localhost:5001/api/game-state")
-          const gameState = await response.json()
+          const response = await fetch("http://localhost:5001/api/get-games")
+          const game_ids = await response.json()
 
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(gameState)}\n\n`))
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(game_ids)}\n\n`))
         } catch (error) {
           console.error("Failed to fetch game state:", error)
         }
       }
 
       // Send initial update
-      await fetchGameState()
+      await fetchGames()
 
       // Send updates every 3 seconds
-      const interval = setInterval(fetchGameState, 3000)
+      const interval = setInterval(fetchGames, 3000)
 
       // Cleanup
       return () => {
